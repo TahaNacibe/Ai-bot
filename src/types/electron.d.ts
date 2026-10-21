@@ -1,18 +1,13 @@
-import { LocalUser } from "./localUser";
-import { DBCategory, DBItem } from "./preload";
-import { DownloadProgress } from "./update";
-
 declare global {
   interface Window {
     electronAPI?: {
-      // Window control
+      apiBaseUrl: string;
       controlWindow: (action: "minimize" | "maximize" | "close") => void;
-    };
-
-    debug: {
-      enable: () => void;
-      disable: () => void;
-      onSet: (callback: (value: boolean) => void) => void;
+      onServerStatus: (callback: (status: { state: string; detail: string }) => void) => () => void;
+      getServerStatus: () => Promise<{ state: string; detail: string }>;
+      restartServer: () => Promise<boolean>;
     };
   }
 }
+
+export {};

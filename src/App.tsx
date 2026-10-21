@@ -1,16 +1,16 @@
-import { Routes, Route } from "react-router-dom";
-import MainPage from "./app/page";
-import PageNotFound from "./404";
+import { Navigate, Route, Routes } from "react-router-dom";
+import AppShell from "./components/AppShell";
+import ChatPage from "./pages/ChatPage";
+import SettingsPage from "./pages/SettingsPage";
 
-function App() {
+export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<MainPage />} />
-
-      {/* =========== 404 ============== */}
-      <Route path="*" element={<PageNotFound />} />
+      <Route element={<AppShell />}>
+        <Route index element={<ChatPage />} />
+        <Route path="settings" element={<SettingsPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
     </Routes>
   );
 }
-
-export default App;

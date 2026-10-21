@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local AI Chat — Server unavailable</title>
+  <style>
+    :root { color-scheme: light; font-family: "Segoe UI", sans-serif; color: #20271f; background: #f5f6f2; }
+    body { display: grid; min-height: 100vh; margin: 0; place-items: center; }
+    main { width: min(440px, calc(100vw - 48px)); padding: 32px; border: 1px solid #e5e8e1; border-radius: 12px; background: white; }
+    h1 { margin: 0 0 10px; font-size: 22px; }
+    p { color: #68736a; line-height: 1.6; }
+    #detail { overflow-wrap: anywhere; font-size: 13px; }
+    button { padding: 10px 14px; border: 0; border-radius: 6px; background: #286149; color: white; cursor: pointer; font: inherit; }
+    button:disabled { cursor: wait; opacity: .65; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Local server unavailable</h1>
+    <p>Local AI Chat could not start its server. Make sure Python and the app's Python dependencies are available, then try again.</p>
+    <p id="detail" role="status" aria-live="polite">Checking server status…</p>
+    <button id="retry" type="button">Retry server</button>
+  </main>
+  <script>
+    const detail = document.querySelector("#detail");
+    const retry = document.querySelector("#retry");
+    const setStatus = ({ state, detail: message }) => {
+      detail.textContent = message || state;
+      retry.disabled = state === "starting";
+    };
+    window.electronAPI.onServerStatus(setStatus);
+    window.electronAPI.getServerStatus().then(setStatus);
+    retry.addEventListener("click", async () => {
+      retry.disabled = true;
+      try {
+        await window.electronAPI.restartServer();
+      } catch (error) {
+        setStatus({ state: "error", detail: error.message });
+      } finally {
+        retry.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

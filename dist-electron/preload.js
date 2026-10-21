@@ -1,6 +1,1 @@
-let electron = require("electron");
-//#region electron/preload.ts
-electron.contextBridge.exposeInMainWorld("electronAPI", { controlWindow: (action) => {
-	electron.ipcRenderer.send("window-control", action);
-} });
-//#endregion
+let e=require(`electron`);e.contextBridge.exposeInMainWorld(`electronAPI`,{apiBaseUrl:`http://127.0.0.1:8000`,controlWindow:t=>e.ipcRenderer.send(`window-control`,t),onServerStatus:t=>{let n=(e,n)=>t(n);return e.ipcRenderer.on(`server-status`,n),()=>e.ipcRenderer.removeListener(`server-status`,n)},getServerStatus:()=>e.ipcRenderer.invoke(`server-status`),restartServer:()=>e.ipcRenderer.invoke(`server-restart`)});

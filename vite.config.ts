@@ -48,4 +48,8 @@ export default defineConfig({
     outDir: "dist-vite",
     emptyOutDir: true,
   },
+  server: {
+    host: "0.0.0.0",
+    port: 5173,
+  },
 });

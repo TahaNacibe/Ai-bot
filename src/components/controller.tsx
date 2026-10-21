@@ -1,5 +1,5 @@
 import { Maximize, Minus, X } from "lucide-react";
-import { ReactNode } from "react";
+import { type CSSProperties, type ReactNode } from "react";
 
 export default function CustomTitleBar({ children }: { children: ReactNode }) {
   const handleWindow = (action: "minimize" | "maximize" | "close") => {
@@ -7,40 +7,40 @@ export default function CustomTitleBar({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* Titlebar */}
+    <div className="desktop-window">
       <div
-        className="flex items-center justify-between bg-background border-b"
-        style={{ WebkitAppRegion: "drag" } as any}
+        className="window-titlebar"
+        style={{ WebkitAppRegion: "drag" } as CSSProperties}
       >
-        <div className="text-sm font-medium pl-3">Electron App</div>
+        <div className="window-title">Local AI Chat <span>/ local</span></div>
         <div
-          className="flex items-center"
-          style={{ WebkitAppRegion: "no-drag" } as any}
+          className="window-controls"
+          style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
         >
           <button
+            type="button"
+            aria-label="Minimize window"
             onClick={() => handleWindow("minimize")}
-            className="hover:bg-gray-200/50 px-3.5 py-2"
           >
             <Minus size={16} />
           </button>
           <button
+            type="button"
+            aria-label="Maximize window"
             onClick={() => handleWindow("maximize")}
-            className="hover:bg-gray-200/50 px-3.5 py-2"
           >
             <Maximize size={16} />
           </button>
           <button
+            type="button"
+            aria-label="Close window"
             onClick={() => handleWindow("close")}
-            className="hover:bg-red-700 px-3.5 py-2"
           >
             <X size={16} />
           </button>
         </div>
       </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-auto">{children}</div>
+      <div className="window-content">{children}</div>
     </div>
   );
 }

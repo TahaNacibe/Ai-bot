@@ -26,39 +26,39 @@
     ],
     "extraResources": [
       {
-        "from": "../../../server.py",
+        "from": "server.py",
         "to": "server.py"
       },
       {
-        "from": "../../../core.py",
+        "from": "core.py",
         "to": "core.py"
       },
       {
-        "from": "../../../config",
+        "from": "config",
         "to": "config"
       },
       {
-        "from": "../../../repository",
+        "from": "repository",
         "to": "repository"
       },
       {
-        "from": "../../../settings",
+        "from": "settings",
         "to": "settings"
       },
       {
-        "from": "../../../plugins/web",
+        "from": "plugins/web",
         "to": "plugins/web"
       },
       {
-        "from": "../../../personas",
+        "from": "personas",
         "to": "personas"
       },
       {
-        "from": "../../../requirements.txt",
+        "from": "requirements.txt",
         "to": "requirements.txt"
       },
       {
-        "from": "../../../model_requirements.txt",
+        "from": "model_requirements.txt",
         "to": "model_requirements.txt"
       }
     ],

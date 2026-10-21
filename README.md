@@ -10,7 +10,7 @@ The desktop renderer is a native React, TypeScript, and Vite application styled 
 
 The desktop package includes the Python server source, its app modules, the browser client assets, requirements files, and default personas. It uses the system Python installation rather than bundling Python itself. Set `PYTHON_EXECUTABLE` if Python is not available as `python` (Windows) or `python3` (macOS/Linux).
 
-Packaged persona changes are saved under Electron's per-user application data directory. The browser app continues to be served independently by the repository's Python server.
+Packaged persona changes are saved under Electron's per-user application data directory. To run the browser app separately, start `python server.py` from this directory; it serves the included web client and API.
 
 ## Commands
 

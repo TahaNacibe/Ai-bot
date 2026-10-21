@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f6f2">
+  <title>Assistant Chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Chat history">
+      <a class="wordmark" href="/" aria-label="Assistant home">
+        <span class="brand-mark" id="brand-mark" aria-hidden="true">A</span>
+        <span><span id="assistant-brand-name">Assistant</span><span class="wordmark-light"> / local</span></span>
+      </a>
+      <button class="new-chat" id="new-chat" type="button"><span aria-hidden="true">+</span> New chat</button>
+      <div class="history-label">RECENT</div>
+      <nav class="history-list" id="history-list" aria-label="Recent conversations"></nav>
+      <div class="sidebar-bottom">
+        <span class="online-dot" aria-hidden="true"></span>
+        <span>Running on this device</span>
+      </div>
+    </aside>
+
+    <main class="main-panel">
+      <header class="topbar">
+        <button class="menu-button" id="menu-button" type="button" aria-label="Open chat history" aria-expanded="false">☰</button>
+        <div class="assistant-label" id="topbar-assistant-name">Assistant</div>
+        <div class="model-runtime" aria-live="polite">
+          <span class="model-indicator is-idle" id="model-indicator" aria-hidden="true"></span>
+          <span class="model-runtime-name" id="running-model-name">Checking Ollama…</span>
+          <span class="model-runtime-state" id="model-runtime-state">CHECKING</span>
+        </div>
+        <div class="topbar-actions">
+          <div class="local-label">LOCAL MODEL</div>
+          <button class="settings-button" id="settings-button" type="button" aria-label="Settings" title="Settings">⚙</button>
+        </div>
+      </header>
+
+        <section class="settings-page hidden" id="settings-page" aria-label="Settings page">
+          <div class="settings-shell">
+            <div class="settings-sidebar">
+              <div class="settings-kicker">PREFERENCES</div>
+              <h2>Settings</h2>
+              <nav class="settings-nav" aria-label="Settings sections">
+                <button class="settings-tab active" type="button" data-tab="general">General</button>
+                <button class="settings-tab" type="button" data-tab="personas">Personas</button>
+              </nav>
+              <button class="settings-close" id="close-settings" type="button" aria-label="Close settings">Back to chat</button>
+            </div>
+            <div class="settings-content">
+              <section class="settings-panel active" data-panel="general">
+                <label class="settings-row">
+                  <span class="settings-copy">
+                    <span class="settings-name">Assistant name</span>
+                    <span class="settings-description">Choose the name shown in chats and the sidebar.</span>
+                  </span>
+                  <input class="settings-name-input" id="assistant-name-setting" type="text" maxlength="32" value="Assistant" autocomplete="off">
+                </label>
+                <label class="settings-row model-settings-row">
+                  <span class="settings-copy">
+                    <span class="settings-name">Ollama model</span>
+                    <span class="settings-description">Switching loads the selected model and unloads the previous one.</span>
+                  </span>
+                  <select class="model-select" id="model-select" aria-label="Installed Ollama models">
+                    <option value="">Loading installed models…</option>
+                  </select>
+                </label>
+                <div class="model-switch-error" id="model-switch-error" role="status" aria-live="polite"></div>
+                <label class="settings-row">
+                  <span class="settings-copy">
+                    <span class="settings-name">Web search</span>
+                    <span class="settings-description">Include current web results and source links with each message.</span>
+                  </span>
+                  <input class="settings-switch" id="web-search-setting" type="checkbox" checked>
+                </label>
+                <label class="settings-row">
+                  <span class="settings-copy">
+                    <span class="settings-name">Image search</span>
+                    <span class="settings-description">Fetch public image results and show them in a gallery.</span>
+                  </span>
+                  <input class="settings-switch" id="image-search-setting" type="checkbox" checked>
+                </label>
+                <label class="settings-row">
+                  <span class="settings-copy">
+                    <span class="settings-name">Dark mode</span>
+                    <span class="settings-description">Use a deep gray and light gray color theme.</span>
+                  </span>
+                  <input class="settings-switch" id="dark-mode-setting" type="checkbox">
+                </label>
+                <p class="settings-privacy">When enabled, your message is sent to external search providers. Preferences are saved in this browser.</p>
+              </section>
+              <section class="settings-panel" data-panel="personas">
+                <div class="persona-toolbar">
+                  <div>
+                    <div class="settings-kicker">PERSONAS</div>
+                    <h3>Manage personas</h3>
+                  </div>
+                </div>
+                <label class="settings-row model-settings-row">
+                  <span class="settings-copy">
+                    <span class="settings-name">Active persona</span>
+                    <span class="settings-description">Choose the default personality used for future chats.</span>
+                  </span>
+                  <select class="model-select" id="persona-select" aria-label="Available personas">
+                    <option value="">Loading personas…</option>
+                  </select>
+                </label>
+                <div class="model-switch-error" id="persona-status" role="status" aria-live="polite"></div>
+
+                <form class="persona-form" id="persona-form">
+                  <label class="persona-field">
+                    <span>Persona name</span>
+                    <input id="persona-name" type="text" maxlength="48" placeholder="Example: Analyst" required>
+                  </label>
+                  <label class="persona-field">
+                    <span>System instructions</span>
+                    <textarea id="persona-content" rows="6" maxlength="8000" placeholder="Describe how this persona should answer" required></textarea>
+                  </label>
+                  <div class="persona-actions">
+                    <button class="persona-create-button" id="persona-create-button" type="submit">Create persona</button>
+                    <button class="persona-update-button hidden" id="persona-update-button" type="button">Save changes</button>
+                    <button class="persona-delete-button hidden" id="persona-delete-button" type="button">Delete</button>
+                  </div>
+                </form>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <section class="conversation" id="conversation" aria-live="polite" aria-label="Conversation">
+        <div class="welcome" id="welcome">
+          <div class="welcome-kicker"><span class="kicker-line"></span> YOUR LOCAL AI</div>
+          <h1>A good place<br>to <span>think out loud.</span></h1>
+          <p>Ask a question, untangle an idea, or make something new. Your conversation stays on this network.</p>
+          <p>Ask a question or paste a public YouTube, Instagram, or social link. The assistant can use available YouTube captions and public search results; private posts are not accessible.</p>
+          <div class="suggestions" aria-label="Try asking">
+            <button class="suggestion" type="button" data-prompt="Explain a tricky idea in a simple way">Explain a tricky idea <span aria-hidden="true">↗</span></button>
+            <button class="suggestion" type="button" data-prompt="Help me brainstorm a fresh idea for a project">Brainstorm an idea <span aria-hidden="true">↗</span></button>
+            <button class="suggestion" type="button" data-prompt="Help me write a clear, friendly email">Draft a message <span aria-hidden="true">↗</span></button>
+          </div>
+        </div>
+        <div class="messages" id="messages"></div>
+      </section>
+
+      <footer class="composer-area">
+        <form class="composer" id="composer">
+          <label class="visually-hidden" for="prompt">Message Assistant</label>
+          <textarea id="prompt" rows="1" placeholder="Message Assistant…" maxlength="12000" required></textarea>
+          <button class="send-button" id="send-button" type="submit" aria-label="Send message"><span aria-hidden="true">↑</span></button>
+        </form>
+        <div class="composer-note">Enter to send <span>·</span> Shift + Enter for a new line</div>
+      </footer>
+    </main>
+  </div>
+  <div class="sidebar-scrim" id="sidebar-scrim"></div>
+</body>
+</html>

@@ -13,7 +13,7 @@ let currentStatus = { state: "starting", detail: "Starting the local server…" 
 
 const projectRoot = app.isPackaged
   ? process.resourcesPath
-  : path.resolve(__dirname, "../../../..");
+  : path.resolve(__dirname, "..");
 const serverScript = path.join(projectRoot, "server.py");
 const serverUrl = "http://127.0.0.1:8000";
 

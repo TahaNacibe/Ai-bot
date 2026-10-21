@@ -1,0 +1,2 @@
+nandhank/qwen3.5-abliterated-truthful:9b
+qwen3:8b

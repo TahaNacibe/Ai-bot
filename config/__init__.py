@@ -1,0 +1,1 @@
+"""Assistant prompts, intents, and text patterns."""

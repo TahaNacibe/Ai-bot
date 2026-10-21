@@ -31,3 +31,8 @@ release
 *.sw?
 
 .env.local
+
+# Python runtime files and locally selected persona
+__pycache__/
+*.py[cod]
+personas/.active.json

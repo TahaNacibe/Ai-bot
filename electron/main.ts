@@ -97,7 +97,12 @@ async function startServer() {
   }
 
   reportServerStatus("starting", "Starting the local server…");
+  const localPython = path.join(
+    projectRoot,
+    process.platform === "win32" ? ".venv\\Scripts\\python.exe" : ".venv/bin/python",
+  );
   const pythonExecutable = process.env.PYTHON_EXECUTABLE
+    || (!app.isPackaged && fs.existsSync(localPython) ? localPython : "")
     || (process.platform === "win32" ? "python" : "python3");
   serverToken = randomUUID();
 
@@ -109,7 +114,7 @@ async function startServer() {
       AI_TUBE_PERSONAS_DIR: getPersonaDirectory(),
       AI_TUBE_ALLOWED_ORIGINS: "null,http://localhost:5173,http://127.0.0.1:5173",
       AI_TUBE_SERVER_TOKEN: serverToken,
-      HOST: "127.0.0.1",
+      HOST: "0.0.0.0",
       PORT: "8000",
     },
     stdio: ["ignore", "pipe", "pipe"],
@@ -165,6 +170,7 @@ function createWindow() {
     minHeight: 480,
     minWidth: 700,
     title: "Local AI Chat",
+    frame: false,
     show: false,
     webPreferences: {
       contextIsolation: true,

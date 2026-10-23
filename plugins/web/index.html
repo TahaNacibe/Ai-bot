@@ -38,6 +38,7 @@
         </div>
         <div class="topbar-actions">
           <div class="local-label">LOCAL MODEL</div>
+          <button class="profile-button" id="profile-button" type="button" aria-label="Edit profile" title="Edit profile"></button>
           <button class="settings-button" id="settings-button" type="button" aria-label="Settings" title="Settings">⚙</button>
         </div>
       </header>
@@ -49,6 +50,7 @@
               <h2>Settings</h2>
               <nav class="settings-nav" aria-label="Settings sections">
                 <button class="settings-tab active" type="button" data-tab="general">General</button>
+                <button class="settings-tab" type="button" data-tab="profile">Profile</button>
                 <button class="settings-tab" type="button" data-tab="personas">Personas</button>
               </nav>
               <button class="settings-close" id="close-settings" type="button" aria-label="Close settings">Back to chat</button>
@@ -75,14 +77,14 @@
                 <label class="settings-row">
                   <span class="settings-copy">
                     <span class="settings-name">Web search</span>
-                    <span class="settings-description">Include current web results and source links with each message.</span>
+                    <span class="settings-description">Allow web search for explicit requests and questions needing current information.</span>
                   </span>
                   <input class="settings-switch" id="web-search-setting" type="checkbox" checked>
                 </label>
                 <label class="settings-row">
                   <span class="settings-copy">
                     <span class="settings-name">Image search</span>
-                    <span class="settings-description">Fetch public image results and show them in a gallery.</span>
+                    <span class="settings-description">Allow image search when you ask for pictures or visual examples are needed.</span>
                   </span>
                   <input class="settings-switch" id="image-search-setting" type="checkbox" checked>
                 </label>
@@ -94,6 +96,43 @@
                   <input class="settings-switch" id="dark-mode-setting" type="checkbox">
                 </label>
                 <p class="settings-privacy">When enabled, your message is sent to external search providers. Preferences are saved in this browser.</p>
+              </section>
+              <section class="settings-panel" data-panel="profile">
+                <div class="persona-toolbar">
+                  <div>
+                    <div class="settings-kicker">AI PROFILE</div>
+                    <h3>Personalize your assistant</h3>
+                  </div>
+                </div>
+                <div class="profile-editor">
+                  <div class="profile-photo-row">
+                    <div class="profile-preview" id="profile-preview" aria-hidden="true"></div>
+                    <div>
+                      <label class="profile-upload-button" for="profile-avatar-file">Choose a profile photo</label>
+                      <button class="profile-clear-button" id="profile-avatar-clear" type="button">Remove photo</button>
+                      <input class="visually-hidden" id="profile-avatar-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+                      <p class="settings-description">PNG, JPEG, WebP, or GIF; up to 500 KB. The image stays on this device.</p>
+                    </div>
+                  </div>
+                  <label class="persona-field">
+                    <span>Photo URL (optional)</span>
+                    <input id="profile-avatar-url" type="url" maxlength="2048" placeholder="https://example.com/photo.png">
+                  </label>
+                  <label class="persona-field">
+                    <span>AI display name</span>
+                    <input id="profile-name-setting" type="text" maxlength="48" placeholder="How should the assistant address you?">
+                  </label>
+                  <label class="persona-field">
+                    <span>Assistant persona</span>
+                    <textarea id="profile-persona-setting" rows="3" maxlength="1000" placeholder="For example: I'm a designer learning Python."></textarea>
+                  </label>
+                  <label class="persona-field">
+                    <span>Initial context for the assistant</span>
+                    <textarea id="profile-context-setting" rows="5" maxlength="4000" placeholder="Share useful context the assistant should remember between chats."></textarea>
+                  </label>
+                  <div class="model-switch-error" id="profile-status" role="status" aria-live="polite"></div>
+                  <p class="settings-privacy">The AI profile is stored in this browser. Its name, persona, and context are sent with chat requests; the chosen photo is not.</p>
+                </div>
               </section>
               <section class="settings-panel" data-panel="personas">
                 <div class="persona-toolbar">

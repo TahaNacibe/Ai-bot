@@ -7,6 +7,7 @@ const promptInput = document.querySelector("#prompt");
 const sendButton = document.querySelector("#send-button");
 const menuButton = document.querySelector("#menu-button");
 const settingsButton = document.querySelector("#settings-button");
+const profileButton = document.querySelector("#profile-button");
 const settingsPage = document.querySelector("#settings-page");
 const settingsTabs = document.querySelectorAll(".settings-tab");
 const settingsPanels = document.querySelectorAll(".settings-panel");
@@ -14,6 +15,14 @@ const webSearchSetting = document.querySelector("#web-search-setting");
 const imageSearchSetting = document.querySelector("#image-search-setting");
 const darkModeSetting = document.querySelector("#dark-mode-setting");
 const assistantNameSetting = document.querySelector("#assistant-name-setting");
+const profileAvatarFile = document.querySelector("#profile-avatar-file");
+const profileAvatarClear = document.querySelector("#profile-avatar-clear");
+const profileAvatarUrl = document.querySelector("#profile-avatar-url");
+const profileNameSetting = document.querySelector("#profile-name-setting");
+const profilePersonaSetting = document.querySelector("#profile-persona-setting");
+const profileContextSetting = document.querySelector("#profile-context-setting");
+const profilePreview = document.querySelector("#profile-preview");
+const profileStatus = document.querySelector("#profile-status");
 const modelSelect = document.querySelector("#model-select");
 const modelSwitchError = document.querySelector("#model-switch-error");
 const personaSelect = document.querySelector("#persona-select");
@@ -38,6 +47,10 @@ let webSearchEnabled = preferences.webSearchEnabled;
 let imageSearchEnabled = preferences.imageSearchEnabled;
 let darkModeEnabled = preferences.darkModeEnabled;
 let assistantName = preferences.assistantName;
+let profileName = preferences.profileName;
+let profilePersona = preferences.profilePersona;
+let profileContext = preferences.profileContext;
+let profileAvatar = preferences.profileAvatar;
 
 function mountDesktopServerStatus() {
   if (!electronAPI) return;
@@ -100,7 +113,16 @@ function saveChats() {
 }
 
 function loadPreferences() {
-  const defaults = { webSearchEnabled: true, imageSearchEnabled: true, darkModeEnabled: false, assistantName: "Assistant" };
+  const defaults = {
+    webSearchEnabled: true,
+    imageSearchEnabled: true,
+    darkModeEnabled: false,
+    assistantName: "Assistant",
+    profileName: "",
+    profilePersona: "",
+    profileContext: "",
+    profileAvatar: "",
+  };
   try {
     const saved = JSON.parse(localStorage.getItem("qwen-local-search-preferences-v1") || "{}");
     return {
@@ -108,15 +130,36 @@ function loadPreferences() {
       imageSearchEnabled: typeof saved.imageSearchEnabled === "boolean" ? saved.imageSearchEnabled : defaults.imageSearchEnabled,
       darkModeEnabled: typeof saved.darkModeEnabled === "boolean" ? saved.darkModeEnabled : defaults.darkModeEnabled,
       assistantName: typeof saved.assistantName === "string" ? saved.assistantName.trim().slice(0, 32) || defaults.assistantName : defaults.assistantName,
+      profileName: typeof saved.profileName === "string" ? saved.profileName.slice(0, 48) : defaults.profileName,
+      profilePersona: typeof saved.profilePersona === "string" ? saved.profilePersona.slice(0, 1000) : defaults.profilePersona,
+      profileContext: typeof saved.profileContext === "string" ? saved.profileContext.slice(0, 4000) : defaults.profileContext,
+      profileAvatar: validProfileAvatar(saved.profileAvatar) ? saved.profileAvatar : defaults.profileAvatar,
     };
   } catch {
     return defaults;
   }
 }
 
+function validProfileAvatar(value) {
+  return typeof value === "string"
+    && value.length <= 700000
+    && (/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/]+=*$/i.test(value)
+      || /^https?:\/\/\S+$/i.test(value));
+}
+
 function savePreferences() {
-  preferences = { webSearchEnabled, imageSearchEnabled, darkModeEnabled, assistantName };
+  preferences = {
+    webSearchEnabled,
+    imageSearchEnabled,
+    darkModeEnabled,
+    assistantName,
+    profileName,
+    profilePersona,
+    profileContext,
+    profileAvatar,
+  };
   localStorage.setItem("qwen-local-search-preferences-v1", JSON.stringify(preferences));
+  applyProfile();
 }
 
 function syncSettingsPage() {
@@ -124,6 +167,11 @@ function syncSettingsPage() {
   imageSearchSetting.checked = imageSearchEnabled;
   darkModeSetting.checked = darkModeEnabled;
   assistantNameSetting.value = assistantName;
+  profileAvatarUrl.value = profileAvatar.startsWith("data:") ? "" : profileAvatar;
+  profileNameSetting.value = profileName;
+  profilePersonaSetting.value = profilePersona;
+  profileContextSetting.value = profileContext;
+  applyProfile();
 }
 
 function setSettingsTab(tabName) {
@@ -388,24 +436,79 @@ async function deleteSelectedPersona() {
 }
 
 function applyAssistantName() {
-  const monogram = assistantMonogram();
-  document.querySelector("#assistant-brand-name").textContent = assistantName;
-  document.querySelector("#brand-mark").textContent = monogram || "A";
-  document.querySelector(".wordmark").setAttribute("aria-label", `${assistantName} home`);
-  document.querySelector("#topbar-assistant-name").textContent = assistantName;
-  document.querySelector("label[for='prompt']").textContent = `Message ${assistantName}`;
-  promptInput.placeholder = `Message ${assistantName}…`;
-  document.querySelectorAll(".message.assistant .message-label").forEach((label) => {
-    label.textContent = assistantName.toUpperCase();
-  });
-  document.querySelectorAll(".message.assistant .message-avatar").forEach((avatar) => {
-    avatar.textContent = monogram || "A";
-  });
-  document.title = `${assistantName} Chat`;
+  const displayName = profileName.trim() || assistantName;
+  document.querySelector("label[for='prompt']").textContent = `Message ${displayName}`;
+  promptInput.placeholder = `Message ${displayName}…`;
+  applyProfile();
 }
 
 function assistantMonogram() {
   return assistantName.trim().split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+}
+
+function profileMonogram() {
+  return (profileName.trim().split(/\s+/).map((part) => part[0]).join("").slice(0, 2) || "A").toUpperCase();
+}
+
+function applyProfile() {
+  const avatar = (className) => {
+    const element = document.createElement("span");
+    element.className = className;
+    if (profileAvatar) {
+      const image = document.createElement("img");
+      image.src = profileAvatar;
+      image.alt = "";
+      image.referrerPolicy = "no-referrer";
+      element.append(image);
+    } else {
+      element.textContent = profileName.trim()
+        ? profileMonogram()
+        : assistantMonogram() || "A";
+    }
+    return element;
+  };
+  profileButton.replaceChildren(avatar("profile-button-avatar"));
+  profileButton.setAttribute("aria-label", profileName ? `Edit ${profileName}'s profile` : "Edit profile");
+  profilePreview.replaceChildren(avatar("profile-photo"));
+  const brandMark = document.querySelector("#brand-mark");
+  if (profileAvatar) {
+    const image = document.createElement("img");
+    image.src = profileAvatar;
+    image.alt = "";
+    image.referrerPolicy = "no-referrer";
+    brandMark.replaceChildren(image);
+  } else {
+    brandMark.textContent = profileName.trim() ? profileMonogram() : assistantMonogram() || "A";
+  }
+  const displayName = profileName.trim() || assistantName;
+  document.querySelector("#assistant-brand-name").textContent = displayName;
+  document.querySelector(".wordmark").setAttribute("aria-label", `${displayName} home`);
+  document.querySelector("#topbar-assistant-name").textContent = displayName;
+  document.title = `${displayName} Chat`;
+  document.querySelectorAll(".message.assistant .message-avatar").forEach((element) => {
+    if (profileAvatar) {
+      const image = document.createElement("img");
+      image.src = profileAvatar;
+      image.alt = "";
+      image.referrerPolicy = "no-referrer";
+      element.replaceChildren(image);
+    } else {
+      element.textContent = profileName.trim()
+        ? profileMonogram()
+        : assistantMonogram() || "A";
+    }
+  });
+  document.querySelectorAll(".message.assistant .message-label").forEach((label) => {
+    label.textContent = displayName.toUpperCase();
+  });
+}
+
+function profileMemoryContext() {
+  return [
+    profileName.trim() ? `AI display name: ${profileName.trim()}.` : "",
+    profilePersona.trim() ? `Assistant persona: ${profilePersona.trim()}` : "",
+    profileContext.trim() ? `Initial context for the assistant: ${profileContext.trim()}` : "",
+  ].filter(Boolean);
 }
 
 function applyTheme() {
@@ -669,7 +772,9 @@ function makeMessage(role, content, { pending = false, error = false, sources = 
   body.className = "message-content";
   const label = document.createElement("div");
   label.className = "message-label";
-  label.textContent = role === "user" ? "YOU" : assistantName.toUpperCase();
+  label.textContent = role === "user"
+    ? "YOU"
+    : (profileName.trim() || assistantName).toUpperCase();
   const text = document.createElement("div");
   text.className = `message-text${pending ? " pending" : ""}`;
   if (role === "assistant" && !pending) renderMarkdown(text, content, requestedFilename, { sources, images, imageRequested });
@@ -679,7 +784,15 @@ function makeMessage(role, content, { pending = false, error = false, sources = 
     const avatar = document.createElement("span");
     avatar.className = "message-avatar";
     avatar.setAttribute("aria-hidden", "true");
-    avatar.textContent = assistantMonogram() || "A";
+    if (profileAvatar) {
+      const image = document.createElement("img");
+      image.src = profileAvatar;
+      image.alt = "";
+      image.referrerPolicy = "no-referrer";
+      avatar.append(image);
+    } else {
+      avatar.textContent = profileName.trim() ? profileMonogram() : assistantMonogram() || "A";
+    }
     row.append(avatar, body);
   } else {
     row.append(body);
@@ -732,6 +845,13 @@ function openSettings() {
   settingsPage.classList.remove("hidden");
   document.body.classList.add("settings-open");
   setSettingsTab("general");
+}
+
+function openProfile() {
+  syncSettingsPage();
+  settingsPage.classList.remove("hidden");
+  document.body.classList.add("settings-open");
+  setSettingsTab("profile");
 }
 
 function closeSettings() {
@@ -817,7 +937,13 @@ async function sendMessage(text) {
     const response = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: chat.messages, web_search: webSearchEnabled, image_search: imageSearchEnabled }),
+      body: JSON.stringify({
+        messages: chat.messages,
+        web_search: webSearchEnabled,
+        image_search: imageSearchEnabled,
+        memory_context: profileMemoryContext(),
+        knowledge_pool_data: [],
+      }),
       signal: controller.signal,
     });
     if (!response.ok) {
@@ -895,6 +1021,7 @@ async function sendMessage(text) {
 
 document.querySelector("#new-chat").addEventListener("click", newChat);
 settingsButton.addEventListener("click", openSettings);
+profileButton.addEventListener("click", openProfile);
 document.querySelector("#close-settings").addEventListener("click", closeSettings);
 settingsTabs.forEach((button) => {
   button.addEventListener("click", () => setSettingsTab(button.dataset.tab));
@@ -921,6 +1048,63 @@ assistantNameSetting.addEventListener("change", () => {
   assistantName = assistantNameSetting.value.trim().replace(/\s+/g, " ").slice(0, 32) || "Assistant";
   assistantNameSetting.value = assistantName;
   applyAssistantName();
+  savePreferences();
+});
+profileAvatarUrl.addEventListener("change", () => {
+  const value = profileAvatarUrl.value.trim();
+  if (!value) {
+    profileAvatar = "";
+  } else if (validProfileAvatar(value)) {
+    profileAvatar = value;
+  } else {
+    profileStatus.textContent = "Enter a valid HTTP(S) image URL or choose a local photo.";
+    profileAvatarUrl.value = profileAvatar.startsWith("data:") ? "" : profileAvatar;
+    return;
+  }
+  savePreferences();
+});
+profileAvatarClear.addEventListener("click", () => {
+  profileAvatar = "";
+  profileAvatarUrl.value = "";
+  profileAvatarFile.value = "";
+  profileStatus.textContent = "";
+  savePreferences();
+});
+profileAvatarFile.addEventListener("change", () => {
+  const file = profileAvatarFile.files?.[0];
+  if (!file) return;
+  if (!/^image\/(?:png|jpeg|webp|gif)$/i.test(file.type) || file.size > 500_000) {
+    profileStatus.textContent = "Choose a PNG, JPEG, WebP, or GIF image up to 500 KB.";
+    profileAvatarFile.value = "";
+    return;
+  }
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    if (typeof reader.result !== "string" || !validProfileAvatar(reader.result)) {
+      profileStatus.textContent = "Could not read that profile photo.";
+      return;
+    }
+    profileAvatar = reader.result;
+    profileAvatarUrl.value = "";
+    savePreferences();
+  });
+  reader.addEventListener("error", () => {
+    profileStatus.textContent = "Could not read that profile photo.";
+  });
+  reader.readAsDataURL(file);
+});
+profileNameSetting.addEventListener("change", () => {
+  profileName = profileNameSetting.value.trim().slice(0, 48);
+  profileNameSetting.value = profileName;
+  savePreferences();
+  render();
+});
+profilePersonaSetting.addEventListener("change", () => {
+  profilePersona = profilePersonaSetting.value.trim().slice(0, 1000);
+  savePreferences();
+});
+profileContextSetting.addEventListener("change", () => {
+  profileContext = profileContextSetting.value.trim().slice(0, 4000);
   savePreferences();
 });
 form.addEventListener("submit", (event) => {
@@ -979,6 +1163,7 @@ personaSelect.addEventListener("dblclick", async () => {
 
 applyTheme();
 applyAssistantName();
+applyProfile();
 mountDesktopServerStatus();
 render();
 refreshModelStatus();

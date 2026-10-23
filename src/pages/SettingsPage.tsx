@@ -1,18 +1,22 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { api } from "../lib/api";
 import type { ModelStatus, Persona, PersonaStatus } from "../types/chat";
 import { Button } from "../components/ui/button";
 
 const PREFERENCES_KEY = "qwen-local-search-preferences-v1";
-type Tab = "general" | "personas";
+type Tab = "general" | "profile" | "personas";
 
 type Preferences = {
   webSearchEnabled: boolean;
   imageSearchEnabled: boolean;
   darkModeEnabled: boolean;
   assistantName: string;
+  profileName: string;
+  profilePersona: string;
+  profileContext: string;
+  profileAvatar: string;
 };
 
 const defaults: Preferences = {
@@ -20,7 +24,18 @@ const defaults: Preferences = {
   imageSearchEnabled: true,
   darkModeEnabled: false,
   assistantName: "Assistant",
+  profileName: "",
+  profilePersona: "",
+  profileContext: "",
+  profileAvatar: "",
 };
+
+function validProfileAvatar(value: unknown): value is string {
+  return typeof value === "string"
+    && value.length <= 700000
+    && (/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/]+=*$/i.test(value)
+      || /^https?:\/\/\S+$/i.test(value));
+}
 
 function readPreferences(): Preferences {
   try {
@@ -30,6 +45,10 @@ function readPreferences(): Preferences {
       imageSearchEnabled: typeof saved.imageSearchEnabled === "boolean" ? saved.imageSearchEnabled : defaults.imageSearchEnabled,
       darkModeEnabled: typeof saved.darkModeEnabled === "boolean" ? saved.darkModeEnabled : defaults.darkModeEnabled,
       assistantName: typeof saved.assistantName === "string" ? saved.assistantName.trim().slice(0, 32) || defaults.assistantName : defaults.assistantName,
+      profileName: typeof saved.profileName === "string" ? saved.profileName.slice(0, 48) : defaults.profileName,
+      profilePersona: typeof saved.profilePersona === "string" ? saved.profilePersona.slice(0, 1000) : defaults.profilePersona,
+      profileContext: typeof saved.profileContext === "string" ? saved.profileContext.slice(0, 4000) : defaults.profileContext,
+      profileAvatar: validProfileAvatar(saved.profileAvatar) ? saved.profileAvatar : defaults.profileAvatar,
     };
   } catch {
     return defaults;
@@ -41,8 +60,13 @@ function idFromName(value: string) {
 }
 
 export default function SettingsPage() {
-  const [tab, setTab] = useState<Tab>("general");
+  const location = useLocation();
+  const [tab, setTab] = useState<Tab>(() => new URLSearchParams(location.search).get("tab") === "profile" ? "profile" : "general");
   const [preferences, setPreferences] = useState(readPreferences);
+  const [profileAvatarDraft, setProfileAvatarDraft] = useState(() => {
+    const avatar = readPreferences().profileAvatar;
+    return avatar.startsWith("data:") ? "" : avatar;
+  });
   const [models, setModels] = useState<string[]>([]);
   const [selectedModel, setSelectedModel] = useState("");
   const [personas, setPersonas] = useState<Persona[]>([]);
@@ -58,6 +82,14 @@ export default function SettingsPage() {
     document.documentElement.classList.toggle("dark", preferences.darkModeEnabled);
     localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences));
     window.dispatchEvent(new CustomEvent("assistant-name-change", { detail: preferences.assistantName }));
+    window.dispatchEvent(new CustomEvent("profile-change", {
+      detail: {
+        name: preferences.profileName,
+        persona: preferences.profilePersona,
+        context: preferences.profileContext,
+        avatar: preferences.profileAvatar,
+      },
+    }));
   }, [preferences]);
 
   useEffect(() => {
@@ -100,6 +132,33 @@ export default function SettingsPage() {
     setName("");
     setContent("");
     setStatus("Creating a new persona.");
+  }
+
+  async function setProfilePhoto(file?: File) {
+    if (!file) return;
+    if (!/^image\/(?:png|jpeg|webp|gif)$/i.test(file.type) || file.size > 500_000) {
+      setError("Choose a PNG, JPEG, WebP, or GIF image up to 500 KB.");
+      return;
+    }
+    try {
+      const reader = new FileReader();
+      const result = await new Promise<string>((resolve, reject) => {
+        reader.addEventListener("load", () => {
+          if (typeof reader.result === "string") resolve(reader.result);
+          else reject(new Error("Could not read that profile photo."));
+        }, { once: true });
+        reader.addEventListener("error", () => reject(new Error("Could not read that profile photo.")), { once: true });
+        reader.readAsDataURL(file);
+      });
+      if (!validProfileAvatar(result)) {
+        throw new Error("Could not read that profile photo.");
+      }
+      setPreferences((current) => ({ ...current, profileAvatar: result }));
+      setProfileAvatarDraft("");
+      setError("");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    }
   }
 
   async function switchPersona(id: string) {
@@ -208,6 +267,7 @@ export default function SettingsPage() {
         <h1>Settings</h1>
         <nav className="settings-nav" aria-label="Settings sections">
           <button className={tab === "general" ? "active" : ""} onClick={() => setTab("general")}>General</button>
+          <button className={tab === "profile" ? "active" : ""} onClick={() => setTab("profile")}>Profile</button>
           <button className={tab === "personas" ? "active" : ""} onClick={() => setTab("personas")}>Personas</button>
         </nav>
         <Link className="inline-flex h-9 items-center justify-start gap-2 rounded-md border border-input bg-background px-3 text-xs font-semibold shadow-sm hover:bg-muted back-button" to="/"><ArrowLeft size={16} /> Back to chat</Link>
@@ -233,10 +293,73 @@ export default function SettingsPage() {
                 {selectedModel && !models.includes(selectedModel) && <option value={selectedModel}>{selectedModel} (not installed)</option>}
               </select>
             </label>
-            <ToggleRow title="Web search" description="Include current web results and source links with messages." checked={preferences.webSearchEnabled} onChange={(checked) => setPreferences((current) => ({ ...current, webSearchEnabled: checked }))} />
-            <ToggleRow title="Image search" description="Fetch public image results and show them in a gallery." checked={preferences.imageSearchEnabled} onChange={(checked) => setPreferences((current) => ({ ...current, imageSearchEnabled: checked }))} />
+            <ToggleRow title="Web search" description="Allow web search for explicit requests and questions needing current information." checked={preferences.webSearchEnabled} onChange={(checked) => setPreferences((current) => ({ ...current, webSearchEnabled: checked }))} />
+            <ToggleRow title="Image search" description="Allow image search when you ask for pictures or visual examples are needed." checked={preferences.imageSearchEnabled} onChange={(checked) => setPreferences((current) => ({ ...current, imageSearchEnabled: checked }))} />
             <ToggleRow title="Dark mode" description="Use a deep gray and light gray color theme." checked={preferences.darkModeEnabled} onChange={(checked) => setPreferences((current) => ({ ...current, darkModeEnabled: checked }))} />
             <p className="settings-note">When enabled, search sends your message to external search providers. Preferences are saved on this device.</p>
+          </div>
+        ) : tab === "profile" ? (
+          <div className="settings-panel profile-settings">
+            <div className="eyebrow">AI PROFILE</div>
+            <h2>Personalize your assistant</h2>
+            <div className="profile-photo-editor">
+              <div className="profile-photo-preview">
+                {preferences.profileAvatar
+                  ? <img src={preferences.profileAvatar} alt="" />
+                  : <span>{preferences.profileName.trim().slice(0, 1).toUpperCase() || "A"}</span>}
+              </div>
+              <div className="profile-photo-actions">
+                <label className="button profile-photo-picker">
+                  Choose an AI profile photo
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    onChange={(event) => void setProfilePhoto(event.target.files?.[0])}
+                  />
+                </label>
+                <button
+                  className="button button-small"
+                  type="button"
+                  onClick={() => {
+                    setPreferences((current) => ({ ...current, profileAvatar: "" }));
+                    setProfileAvatarDraft("");
+                    setError("");
+                  }}
+                >
+                  Remove photo
+                </button>
+                <small>AI profile photo. PNG, JPEG, WebP, or GIF; up to 500 KB. Stored on this device.</small>
+              </div>
+            </div>
+            <label className="field-label">Photo URL (optional)
+              <input
+                className="text-input"
+                type="url"
+                maxLength={2048}
+                value={profileAvatarDraft}
+                placeholder="https://example.com/photo.png"
+                onChange={(event) => setProfileAvatarDraft(event.target.value)}
+                onBlur={() => {
+                  const value = profileAvatarDraft.trim();
+                  if (!value || validProfileAvatar(value)) {
+                    setPreferences((current) => ({ ...current, profileAvatar: value }));
+                    setError("");
+                  } else {
+                    setError("Enter a valid HTTP(S) image URL.");
+                  }
+                }}
+              />
+            </label>
+            <label className="field-label">AI display name
+              <input className="text-input" maxLength={48} value={preferences.profileName} placeholder="Name shown for the assistant" onChange={(event) => setPreferences((current) => ({ ...current, profileName: event.target.value }))} />
+            </label>
+            <label className="field-label">Assistant persona
+              <textarea className="text-input" maxLength={1000} rows={3} value={preferences.profilePersona} placeholder="Describe the assistant's personality and style." onChange={(event) => setPreferences((current) => ({ ...current, profilePersona: event.target.value }))} />
+            </label>
+            <label className="field-label">Initial context for the assistant
+              <textarea className="text-input profile-context-input" maxLength={4000} rows={6} value={preferences.profileContext} placeholder="Add background context that should guide the assistant between chats." onChange={(event) => setPreferences((current) => ({ ...current, profileContext: event.target.value }))} />
+            </label>
+            <p className="settings-note">The AI profile is stored locally. Its name, persona, and context are sent with chat requests; the photo is not.</p>
           </div>
         ) : (
           <div className="settings-panel persona-settings">

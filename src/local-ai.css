@@ -14,15 +14,15 @@
 
 :root.dark {
   color-scheme: dark;
-  --app-bg: #171b18;
-  --app-surface: #202722;
-  --app-sidebar: #1b211d;
-  --app-ink: #edf1ec;
-  --app-muted: #a0aaa1;
-  --app-line: #343c36;
-  --app-green: #65a27e;
-  --app-green-dark: #a4d0b5;
-  --app-green-pale: #29392f;
+  --app-bg: #141414;
+  --app-surface: #242424;
+  --app-sidebar: #1c1c1c;
+  --app-ink: #f2f2f2;
+  --app-muted: #b8b8b8;
+  --app-line: #3b3b3b;
+  --app-green: #c4c4c4;
+  --app-green-dark: #f0f0f0;
+  --app-green-pale: #353535;
   --app-danger: #d27e69;
 }
 
@@ -36,7 +36,7 @@ button { color: inherit; }
 .desktop-window { display: flex; width: 100%; height: 100%; flex-direction: column; }
 .window-titlebar { display: flex; height: 32px; flex: 0 0 32px; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--app-line); background: var(--app-surface); }
 .window-title { padding-left: 12px; color: var(--app-muted); font-size: 10px; font-weight: 650; user-select: none; }
-.window-title span { color: #a3aba4; font-weight: 450; }
+.window-title span { color: #a3a3a3; font-weight: 450; }
 .window-controls { display: flex; height: 100%; }
 .window-controls button { display: grid; width: 44px; height: 100%; place-items: center; border: 0; background: transparent; color: var(--app-muted); cursor: pointer; }
 .window-controls button:hover { background: var(--app-bg); color: var(--app-ink); }
@@ -44,7 +44,9 @@ button { color: inherit; }
 .window-content { min-height: 0; flex: 1; overflow: hidden; }
 .app-topbar { display: flex; height: 58px; flex: 0 0 58px; align-items: center; justify-content: space-between; gap: 20px; padding: 0 24px; border-bottom: 1px solid var(--app-line); background: var(--app-surface); }
 .app-brand { display: inline-flex; min-width: 190px; align-items: center; gap: 10px; color: var(--app-ink); font-size: 14px; font-weight: 750; text-decoration: none; }
-.brand-icon { display: grid; width: 29px; height: 29px; place-items: center; border-radius: 9px 9px 9px 3px; background: var(--app-green); color: #fff; font-family: Georgia, serif; font-size: 20px; font-style: italic; }
+.brand-icon { display: grid; width: 29px; height: 29px; overflow: hidden; place-items: center; border-radius: 9px 9px 9px 3px; background: var(--app-green); color: #fff; font-family: Georgia, serif; font-size: 20px; font-style: italic; }
+.brand-icon.has-profile-avatar { border-radius: 50%; font-family: inherit; font-size: 12px; font-style: normal; }
+.brand-icon img { width: 100%; height: 100%; object-fit: cover; }
 .brand-muted { color: var(--app-muted); font-weight: 500; }
 .topbar-center { display: flex; min-width: 0; align-items: center; gap: 8px; color: var(--app-muted); font-size: 11px; }
 .status-dot { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: #d6a642; }
@@ -64,6 +66,14 @@ button { color: inherit; }
 .button:disabled { cursor: wait; opacity: .6; }
 .button-primary { border-color: var(--app-green); background: var(--app-green); color: white; }
 .button-primary:hover { border-color: var(--app-green-dark); background: var(--app-green-dark); color: white; }
+:root.dark .button-primary,
+:root.dark .button-primary:hover,
+:root.dark .send-button { color: #181818; }
+:root.dark .new-chat-button,
+:root.dark .back-button { border-color: #3b3b3b; background: #e2e2e2; color: #181818; }
+:root.dark .new-chat-button:hover,
+:root.dark .back-button:hover { border-color: #707070; background: #383838; color: #f2f2f2; }
+:root.dark .send-button:disabled { background: #d0d0d0; color: #606060; }
 .button-danger { border-color: #edd9d2; color: var(--app-danger); }
 .button-small { min-height: 28px; padding: 0 9px; font-size: 11px; }
 .new-chat-button { justify-content: flex-start; min-height: 40px; }
@@ -96,6 +106,7 @@ button { color: inherit; }
 .message-body { min-width: 0; max-width: 100%; }
 .message.user .message-body { max-width: 84%; padding: 12px 15px; border: 1px solid var(--app-line); border-radius: 12px 12px 3px 12px; background: var(--app-surface); }
 .assistant-avatar { display: grid; width: 27px; height: 27px; flex: 0 0 27px; place-items: center; border-radius: 8px 8px 8px 3px; background: var(--app-green); color: white; font-family: Georgia, serif; font-size: 17px; font-style: italic; }
+.assistant-avatar img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
 .message-label { margin: 1px 0 7px; color: var(--app-muted); font-size: 9px; font-weight: 750; letter-spacing: .8px; }
 .message.user .message-label { display: none; }
 .message-text { color: var(--app-ink); font-size: 13px; line-height: 1.75; overflow-wrap: anywhere; white-space: pre-wrap; }
@@ -170,6 +181,20 @@ button { color: inherit; }
 .persona-form .text-input { width: 100%; }
 .persona-textarea { min-height: 180px; resize: vertical; line-height: 1.6; }
 .persona-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+.topbar-profile { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; overflow: hidden; border: 1px solid var(--app-line); border-radius: 50%; background: var(--app-green-pale); color: var(--app-green-dark); font-size: 12px; font-weight: 700; text-decoration: none; }
+.topbar-profile img, .user-profile-avatar img, .profile-photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+.user-profile-avatar { display: grid; width: 27px; height: 27px; flex: 0 0 27px; place-items: center; overflow: hidden; border: 1px solid var(--app-line); border-radius: 50%; background: var(--app-green-pale); color: var(--app-green-dark); font-size: 10px; font-weight: 700; }
+.profile-settings { display: grid; align-content: start; gap: 13px; }
+.profile-settings > h2 { margin-bottom: 0; }
+.profile-photo-editor { display: flex; align-items: center; gap: 14px; padding: 4px 0; }
+.profile-photo-preview { display: grid; width: 64px; height: 64px; flex: 0 0 64px; place-items: center; overflow: hidden; border-radius: 50%; background: var(--app-green-pale); color: var(--app-green-dark); font-size: 19px; font-weight: 700; }
+.profile-photo-actions { display: grid; justify-items: start; gap: 6px; }
+.profile-photo-actions small { color: var(--app-muted); font-size: 10px; }
+.profile-photo-picker { position: relative; overflow: hidden; }
+.profile-photo-picker input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.profile-settings .field-label .text-input { width: 100%; }
+.profile-settings textarea { resize: vertical; line-height: 1.5; }
+.profile-context-input { min-height: 110px; }
 
 @media (max-width: 800px) {
   .app-topbar { padding: 0 14px; }
@@ -197,7 +222,7 @@ button { color: inherit; }
   .settings-layout { display: block; overflow-y: auto; }
   .settings-sidebar { width: 100%; padding: 14px; border-right: 0; border-bottom: 1px solid var(--app-line); }
   .settings-sidebar h1 { margin-bottom: 10px; }
-  .settings-nav { grid-template-columns: 1fr 1fr; }
+  .settings-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .back-button { margin-top: 8px; }
   .settings-row { align-items: flex-start; }
   .text-input, .select-input { width: 46%; }

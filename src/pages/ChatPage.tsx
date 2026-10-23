@@ -11,6 +11,28 @@ const PREFS_KEY = "qwen-local-search-preferences-v1";
 
 type QueuedPrompt = { id: string; chatId: string; text: string };
 type StreamState = { chatId: string; content: string } | null;
+type AssistantProfile = { name: string; persona: string; context: string; avatar: string };
+
+function validProfileAvatar(value: unknown): value is string {
+  return typeof value === "string"
+    && value.length <= 700000
+    && (/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/]+=*$/i.test(value)
+      || /^https?:\/\/\S+$/i.test(value));
+}
+
+function readProfile(): AssistantProfile {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}");
+    return {
+      name: typeof saved.profileName === "string" ? saved.profileName : "",
+      persona: typeof saved.profilePersona === "string" ? saved.profilePersona : "",
+      context: typeof saved.profileContext === "string" ? saved.profileContext : "",
+      avatar: validProfileAvatar(saved.profileAvatar) ? saved.profileAvatar : "",
+    };
+  } catch {
+    return { name: "", persona: "", context: "", avatar: "" };
+  }
+}
 
 function readChats(): Chat[] {
   try {
@@ -54,6 +76,7 @@ export default function ChatPage() {
       return "Assistant";
     }
   });
+  const [profile, setProfile] = useState<AssistantProfile>(readProfile);
   const listRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const chatsRef = useRef(chats);
@@ -71,6 +94,19 @@ export default function ChatPage() {
     const updateName = (event: Event) => setAssistantName((event as CustomEvent<string>).detail || "Assistant");
     window.addEventListener("assistant-name-change", updateName);
     return () => window.removeEventListener("assistant-name-change", updateName);
+  }, []);
+  useEffect(() => {
+    const updateProfile = (event: Event) => {
+      const detail = (event as CustomEvent<AssistantProfile>).detail;
+      setProfile({
+        name: typeof detail.name === "string" ? detail.name : "",
+        persona: typeof detail.persona === "string" ? detail.persona : "",
+        context: typeof detail.context === "string" ? detail.context : "",
+        avatar: validProfileAvatar(detail.avatar) ? detail.avatar : "",
+      });
+    };
+    window.addEventListener("profile-change", updateProfile);
+    return () => window.removeEventListener("profile-change", updateProfile);
   }, []);
 
   const updateChats = useCallback((updater: (current: Chat[]) => Chat[]) => {
@@ -145,6 +181,12 @@ export default function ChatPage() {
           messages,
           web_search: preferences.webSearch,
           image_search: preferences.imageSearch,
+          memory_context: [
+            profile.name.trim() ? `AI display name: ${profile.name.trim()}.` : "",
+            profile.persona.trim() ? `Assistant persona: ${profile.persona.trim()}` : "",
+            profile.context.trim() ? `Initial context for the assistant: ${profile.context.trim()}` : "",
+          ].filter(Boolean),
+          knowledge_pool_data: [],
         }),
         signal: controller.signal,
       });
@@ -275,7 +317,7 @@ export default function ChatPage() {
       <section className="chat-main">
         <div className="chat-mobile-bar">
           <button className="icon-button" aria-label="Toggle chat history" onClick={() => setSidebarOpen((open) => !open)}><Menu size={18} /></button>
-          <span>{assistantName}</span>
+          <span>{profile.name.trim() || assistantName}</span>
           <Link className="mobile-settings" to="/settings">Settings</Link>
         </div>
         <div
@@ -302,9 +344,13 @@ export default function ChatPage() {
             <div className="messages">
               {activeChat?.messages.map((message, index) => (
                 <article className={`message ${message.role}`} key={`${activeChat.id}-${index}`}>
-                  {message.role === "assistant" && <span className="assistant-avatar">A</span>}
+                  {message.role === "assistant"
+                    ? <span className="assistant-avatar" aria-label={profile.name.trim() || assistantName}>{profile.avatar
+                      ? <img src={profile.avatar} alt="" />
+                      : profile.name.trim().slice(0, 1).toUpperCase() || assistantName.trim().slice(0, 1).toUpperCase() || "A"}</span>
+                    : null}
                   <div className="message-body">
-                    <div className="message-label">{message.role === "user" ? "YOU" : assistantName.toUpperCase()}</div>
+                    <div className="message-label">{message.role === "user" ? "YOU" : (profile.name.trim() || assistantName).toUpperCase()}</div>
                     <div className="message-text"><MarkdownMessage content={message.content} /></div>
                     {message.images?.length ? <div className="image-gallery">{message.images.map((image) => (
                       <a href={image.url || image.image} target="_blank" rel="noreferrer" key={image.image}>
@@ -322,9 +368,11 @@ export default function ChatPage() {
               ))}
               {visibleStream !== null && (
                 <article className="message assistant">
-                  <span className="assistant-avatar">A</span>
+                  <span className="assistant-avatar" aria-label={profile.name.trim() || assistantName}>{profile.avatar
+                    ? <img src={profile.avatar} alt="" />
+                    : profile.name.trim().slice(0, 1).toUpperCase() || assistantName.trim().slice(0, 1).toUpperCase() || "A"}</span>
                   <div className="message-body">
-                    <div className="message-label">ASSISTANT · TYPING</div>
+                    <div className="message-label">{(profile.name.trim() || assistantName).toUpperCase()} · TYPING</div>
                     <div className="message-text">{visibleStream || <span className="typing-indicator">Thinking…</span>}</div>
                   </div>
                 </article>

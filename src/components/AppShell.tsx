@@ -4,6 +4,14 @@ import { api } from "../lib/api";
 import type { ModelStatus } from "../types/chat";
 
 type ServerStatus = { state: string; detail: string };
+type ProfileSummary = { name: string; avatar: string };
+
+function validProfileAvatar(value: unknown): value is string {
+  return typeof value === "string"
+    && value.length <= 700000
+    && (/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/]+=*$/i.test(value)
+      || /^https?:\/\/\S+$/i.test(value));
+}
 
 export default function AppShell() {
   const location = useLocation();
@@ -12,6 +20,17 @@ export default function AppShell() {
       return JSON.parse(localStorage.getItem("qwen-local-search-preferences-v1") || "{}").assistantName || "Assistant";
     } catch {
       return "Assistant";
+    }
+  });
+  const [profile, setProfile] = useState<ProfileSummary>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("qwen-local-search-preferences-v1") || "{}");
+      return {
+        name: typeof saved.profileName === "string" ? saved.profileName : "",
+        avatar: validProfileAvatar(saved.profileAvatar) ? saved.profileAvatar : "",
+      };
+    } catch {
+      return { name: "", avatar: "" };
     }
   });
   const [server, setServer] = useState<ServerStatus>({ state: "starting", detail: "Starting local server…" });
@@ -23,14 +42,25 @@ export default function AppShell() {
       const customEvent = event as CustomEvent<string>;
       setAssistantName(customEvent.detail || "Assistant");
     };
+    const updateProfile = (event: Event) => {
+      const detail = (event as CustomEvent<ProfileSummary>).detail;
+      setProfile({
+        name: typeof detail.name === "string" ? detail.name : "",
+        avatar: validProfileAvatar(detail.avatar) ? detail.avatar : "",
+      });
+    };
     window.addEventListener("assistant-name-change", updateAssistantName);
+    window.addEventListener("profile-change", updateProfile);
     try {
       const preferences = JSON.parse(localStorage.getItem("qwen-local-search-preferences-v1") || "{}");
       document.documentElement.classList.toggle("dark", preferences.darkModeEnabled === true);
     } catch {
       document.documentElement.classList.remove("dark");
     }
-    return () => window.removeEventListener("assistant-name-change", updateAssistantName);
+    return () => {
+      window.removeEventListener("assistant-name-change", updateAssistantName);
+      window.removeEventListener("profile-change", updateProfile);
+    };
   }, []);
 
   useEffect(() => {
@@ -70,13 +100,18 @@ export default function AppShell() {
   }, []);
 
   const isSettings = location.pathname === "/settings";
+  const profileDisplayName = profile.name.trim() || assistantName;
 
   return (
     <div className="desktop-app">
       <header className="app-topbar">
-        <Link className="app-brand" to="/" aria-label="Local AI Chat home">
-          <span className="brand-icon">A</span>
-          <span>{assistantName} <span className="brand-muted">/ local</span></span>
+        <Link className="app-brand" to="/" aria-label={`${profileDisplayName} home`}>
+          <span className={`brand-icon ${profile.avatar ? "has-profile-avatar" : ""}`}>
+            {profile.avatar
+              ? <img src={profile.avatar} alt="" />
+              : profile.name.trim().slice(0, 1).toUpperCase() || "A"}
+          </span>
+          <span>{profileDisplayName} <span className="brand-muted">/ local</span></span>
         </Link>
         <div className="topbar-center">
           <span className={`status-dot ${server.state}`} />
